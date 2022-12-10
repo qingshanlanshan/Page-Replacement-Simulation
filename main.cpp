@@ -19,7 +19,7 @@ struct frame
 
 int frame_num;
 vector<frame> frames;
-// unordered_map<string, int> page_table;
+unordered_map<int, int> record;
 int page_fault = 0;
 string filename;
 int (*func)();
@@ -168,11 +168,11 @@ int main(int argc, char *argv[])
     std::cout << "Filename: " << filename << endl;
     std::cout << "Frame number: " << frame_num << endl;
 
-    frames = vector<frame>(frame_num, {false, false, 0, 0, 0});
+    frames = vector<frame>(frame_num, {false, false, -1, -1, 0});
     fstream infile;
     infile.open(filename);
     fstream log;
-    log.open("log.txt");
+    log.open("log.txt", ios::out | ios::in | ios::trunc);
 
     if (!infile)
     {
@@ -194,15 +194,26 @@ int main(int argc, char *argv[])
         int newpage;
         ss << s_newpage;
         ss >> hex >> newpage;
-
+        if (record.find(newpage) == record.end())
+        {
+            record[newpage] = 1;
+        }
+        else
+        {
+            record[newpage]++;
+        }
         int frame_num = get_frame(newpage);
         bool r = 0;
         if (frame_num < 0)
         {
-
             r = 1;
             page_fault++;
             frame_num = func();
+            if (frames[frame_num].page == 0)
+            {
+                page_fault--;
+                r = 0;
+            }
             replace_frame(newpage, frame_num);
         }
         else
@@ -217,5 +228,6 @@ int main(int argc, char *argv[])
         log << endl;
     }
     infile.close();
+    std::cout << access_num << " references to " << record.size() << " unique pages" << endl;
     std::cout << "Page fault: " << page_fault << "/" << access_num << " Ratio: " << 1.0 * page_fault / access_num << endl;
 }
