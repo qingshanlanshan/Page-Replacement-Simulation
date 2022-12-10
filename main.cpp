@@ -246,6 +246,7 @@ int main(int argc, char *argv[])
             int frame_num = get_frame(optimal::future_list[optimal::now_position]);
             if (frame_num < 0)
             {
+                r=1;
                 page_fault++;
                 frame_num = func();
                 replace_frame(optimal::future_list[optimal::now_position], frame_num);
