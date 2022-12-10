@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <ctime>
+#include <sstream>
 
 using namespace std;
 
@@ -13,7 +14,7 @@ struct frame
     bool M;
     int last_used;
     int age;
-    string page;
+    int page;
 };
 
 int frame_num;
@@ -25,7 +26,7 @@ int (*func)();
 int access_num = 0;
 bool enable_prepageing = false;
 
-int get_frame(string page)
+int get_frame(int page)
 {
     for (int i = 0; i < frame_num; ++i)
     {
@@ -54,7 +55,8 @@ int LRU()
 {
     int frame_num = 0;
     int last_used = INT32_MAX;
-    for (int i = 0; i < frames.size(); i++)
+    int i = 0;
+    for (; i < frames.size(); i++)
     {
         if (frames[i].last_used < last_used)
         {
@@ -65,17 +67,22 @@ int LRU()
     return frame_num;
 }
 
-int OPT() {}
-int LFU() {}
+int OPT() { return 0; }
+int LFU() { return 0; }
 int Random()
 {
     return rand() % frame_num;
 }
-int Second_Chance() {}
-int Clock() {}
+int Second_Chance() { return 0; }
+int Clock() { return 0; }
 
 int getopt(int argc, char *argv[])
 {
+    for (int i = 0; i < argc; ++i)
+    {
+        cout << argv[i] << " ";
+    }
+    cout << endl;
     if (argc < 7)
         return -1;
     for (int i = 1; i < argc; i++)
@@ -124,7 +131,7 @@ int getopt(int argc, char *argv[])
                 }
                 else
                 {
-                    cout << "Policy Match Fail" << endl;
+                    std::cout << "Policy Match Fail" << endl;
                     return -1;
                 }
             }
@@ -137,7 +144,7 @@ int getopt(int argc, char *argv[])
     return 0;
 }
 
-void replace_frame(string page, int frame_num)
+void replace_frame(int page, int frame_num)
 {
     frames[frame_num].page = page;
     frames[frame_num].R = true;
@@ -150,19 +157,26 @@ int main(int argc, char *argv[])
     srand(time(NULL));
     if (getopt(argc, argv) < 0)
     {
-        cout << "Usage: ./main -f filename -n frame_num -p Policy" << endl;
+        std::cout << "Usage: ./main -f filename -n frame_num -p Policy" << endl;
         return -1;
     }
 
-    cout << "Filename: " << filename << endl;
-    cout << "Frame number: " << frame_num << endl;
+    // filename = "traces/sort1.txt";
+    // frame_num = 256;
+    // func = &LRU;
 
-    frames = vector<frame>(frame_num, {false, false, 0, 0, ""});
-    std::fstream infile;
+    std::cout << "Filename: " << filename << endl;
+    std::cout << "Frame number: " << frame_num << endl;
+
+    frames = vector<frame>(frame_num, {false, false, 0, 0, 0});
+    fstream infile;
     infile.open(filename);
+    fstream log;
+    log.open("log.txt");
+
     if (!infile)
     {
-        cout << "File open failed" << endl;
+        std::cout << "File open failed" << endl;
         return -1;
     }
 
@@ -172,11 +186,20 @@ int main(int argc, char *argv[])
         if (enable_prepageing)
         {
         }
-        string newpage;
-        infile >> newpage;
+        string s_newpage;
+        infile >> s_newpage;
+        if (s_newpage == "")
+            break;
+        stringstream ss;
+        int newpage;
+        ss << s_newpage;
+        ss >> hex >> newpage;
+
         int frame_num = get_frame(newpage);
+        bool r=0;
         if (frame_num < 0)
         {
+            r=1;
             page_fault++;
             frame_num = func();
             replace_frame(newpage, frame_num);
@@ -187,7 +210,11 @@ int main(int argc, char *argv[])
             frames[frame_num].last_used = access_num;
         }
         access_num++;
+        log << "page " << s_newpage << ": " << newpage << " -> frame_num :" << frame_num;
+        if (r)
+            log << " replacement";
+        log << endl;
     }
     infile.close();
-    cout << "Page fault: " << page_fault << "/" << access_num<< " Ratio: "<< 1.0*page_fault/access_num << endl;
+    std::cout << "Page fault: " << page_fault << "/" << access_num << " Ratio: " << 1.0 * page_fault / access_num << endl;
 }
