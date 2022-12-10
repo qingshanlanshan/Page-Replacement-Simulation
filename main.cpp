@@ -196,10 +196,11 @@ int main(int argc, char *argv[])
         ss >> hex >> newpage;
 
         int frame_num = get_frame(newpage);
-        bool r=0;
+        bool r = 0;
         if (frame_num < 0)
         {
-            r=1;
+
+            r = 1;
             page_fault++;
             frame_num = func();
             replace_frame(newpage, frame_num);
