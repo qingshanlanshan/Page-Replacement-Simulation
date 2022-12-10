@@ -10,8 +10,8 @@ using namespace std;
 
 struct frame
 {
-    bool R;
-    bool M;
+    bool accessed;
+    bool dirty;
     int last_used;
     int age;
     int page;
@@ -25,6 +25,11 @@ string filename;
 int (*func)();
 int access_num = 0;
 bool enable_prepageing = false;
+namespace SC
+{
+    int frame_pointer = 0;
+}
+
 
 int get_frame(int page)
 {
@@ -55,8 +60,8 @@ int LRU()
 {
     int frame_num = 0;
     int last_used = INT32_MAX;
-    int i = 0;
-    for (; i < frames.size(); i++)
+
+    for (int i = 0; i < frames.size(); i++)
     {
         if (frames[i].last_used < last_used)
         {
@@ -67,14 +72,33 @@ int LRU()
     return frame_num;
 }
 
-int OPT() { return 0; }
+int OPT()
+{
+    for (int i = 0; i < frames.size(); i++)
+    {
+        
+    }
+}
 int LFU() { return 0; }
 int Random()
 {
     return rand() % frames.size();
 }
-int Second_Chance() { return 0; }
-int Clock() { return 0; }
+int Second_Chance()
+{
+    while (1)
+    {
+        if (frames[SC::frame_pointer].accessed == 0)
+        {
+            return SC::frame_pointer;
+        }
+        else
+        {
+            frames[SC::frame_pointer].accessed = 0;
+            SC::frame_pointer = (SC::frame_pointer + 1) % frames.size();
+        }
+    }
+}
 
 int getopt(int argc, char *argv[])
 {
@@ -125,10 +149,6 @@ int getopt(int argc, char *argv[])
                 {
                     func = &Second_Chance;
                 }
-                else if (str == "Clock")
-                {
-                    func = &Clock;
-                }
                 else
                 {
                     std::cout << "Policy Match Fail" << endl;
@@ -146,12 +166,9 @@ int getopt(int argc, char *argv[])
 
 void replace_frame(int page, int frame_num)
 {
-    frames[frame_num].page = page;
-    frames[frame_num].R = true;
-    frames[frame_num].M = false;
-    frames[frame_num].last_used = access_num;
-    frames[frame_num].age = access_num;
+    frames[frame_num] = {true, false, access_num, access_num, page};
 }
+
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
@@ -168,7 +185,7 @@ int main(int argc, char *argv[])
     std::cout << "Filename: " << filename << endl;
     std::cout << "Frame number: " << frame_num << endl;
 
-    frames = vector<frame>(frame_num, {false, false, -1, -1, 0});
+    frames = vector<frame>(frame_num, {0, 0, -1, -1, 0});
     fstream infile;
     infile.open(filename);
     fstream log;
@@ -218,7 +235,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            frames[frame_num].R = true;
+            frames[frame_num].accessed = true;
             frames[frame_num].last_used = access_num;
         }
         access_num++;
