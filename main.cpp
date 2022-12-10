@@ -215,7 +215,8 @@ int main(int argc, char *argv[])
 
     frames = vector<frame>(frame_num, {0, 0, -1, -1, 0});
     fstream infile;
-
+    fstream log;
+    log.open("log.txt", ios::out | ios::in | ios::trunc);
     if (optimal::is_OPT)
     {
         infile.open(filename);
@@ -230,8 +231,18 @@ int main(int argc, char *argv[])
             optimal::future_list.push_back(newpage);
         }
         infile.close();
+        
         for (optimal::now_position = 0; optimal::now_position < optimal::future_list.size(); optimal::now_position++)
         {
+            bool r=0;
+            if (record.find(optimal::future_list[optimal::now_position]) == record.end())
+            {
+                record[optimal::future_list[optimal::now_position]] = 1;
+            }
+            else
+            {
+                record[optimal::future_list[optimal::now_position]]++;
+            }
             int frame_num = get_frame(optimal::future_list[optimal::now_position]);
             if (frame_num < 0)
             {
@@ -245,15 +256,19 @@ int main(int argc, char *argv[])
                 frames[frame_num].last_used = access_num;
                 frames[frame_num].reuse_list.push_back(access_num);
             }
+            log << "page " << ": " << optimal::future_list[optimal::now_position] << " -> frame_num :" << frame_num;
+            if (r)
+                log << " replacement";
+            log << endl;
             access_num++;
         }
+        std::cout << access_num << " references to " << record.size() << " unique pages" << endl;
         cout << "Page fault: " << page_fault << "/" << access_num << " Ratio: " << 1.0 * page_fault / access_num << endl;
         return 0;
     }
 
     infile.open(filename);
-    fstream log;
-    log.open("log.txt", ios::out | ios::in | ios::trunc);
+    
     if (!infile)
     {
         std::cout << "File open failed" << endl;
