@@ -71,7 +71,7 @@ int OPT() { return 0; }
 int LFU() { return 0; }
 int Random()
 {
-    return rand() % frame_num;
+    return rand() % frames.size();
 }
 int Second_Chance() { return 0; }
 int Clock() { return 0; }
