@@ -15,6 +15,7 @@ struct frame
     int last_used;
     int age;
     int page;
+    vector<int> reuse_list;
 };
 
 int frame_num;
@@ -29,7 +30,12 @@ namespace SC
 {
     int frame_pointer = 0;
 }
-
+namespace optimal
+{
+    bool is_OPT;
+    int now_position;
+    vector<int> future_list;
+}
 
 int get_frame(int page)
 {
@@ -74,10 +80,28 @@ int LRU()
 
 int OPT()
 {
-    for (int i = 0; i < frames.size(); i++)
+    int frame_num = 0;
+
+    int max_time = 0;
+
+    for (int j = 0; j < frames.size(); j++)
     {
-        
+        int name = frames[j].page;
+        // cout<<name<<endl;
+        for (int i = optimal::now_position + 1; i < optimal::future_list.size(); i++)
+        {
+            if (name == optimal::future_list[i])
+            {
+                if (i - optimal::now_position > max_time)
+                {
+                    max_time = i - optimal::now_position;
+                    frame_num = j;
+                }
+                break;
+            }
+        }
     }
+    return frame_num;
 }
 int LFU() { return 0; }
 int Random()
@@ -140,6 +164,9 @@ int getopt(int argc, char *argv[])
                 else if (str == "OPT")
                 {
                     func = &OPT;
+                    optimal::is_OPT = 1;
+                    // 读入
+                    cout << "OPT" << endl;
                 }
                 else if (str == "RAND")
                 {
@@ -167,6 +194,7 @@ int getopt(int argc, char *argv[])
 void replace_frame(int page, int frame_num)
 {
     frames[frame_num] = {true, false, access_num, access_num, page};
+    frames[frame_num].reuse_list.clear();
 }
 
 int main(int argc, char *argv[])
@@ -187,10 +215,45 @@ int main(int argc, char *argv[])
 
     frames = vector<frame>(frame_num, {0, 0, -1, -1, 0});
     fstream infile;
+
+    if (optimal::is_OPT)
+    {
+        infile.open(filename);
+        while (infile.good())
+        {
+            string s_newpage;
+            infile >> s_newpage;
+            stringstream ss;
+            int newpage;
+            ss << s_newpage;
+            ss >> hex >> newpage;
+            optimal::future_list.push_back(newpage);
+        }
+        infile.close();
+        for (optimal::now_position = 0; optimal::now_position < optimal::future_list.size(); optimal::now_position++)
+        {
+            int frame_num = get_frame(optimal::future_list[optimal::now_position]);
+            if (frame_num < 0)
+            {
+                page_fault++;
+                frame_num = func();
+                replace_frame(optimal::future_list[optimal::now_position], frame_num);
+            }
+            else
+            {
+                frames[frame_num].accessed = true;
+                frames[frame_num].last_used = access_num;
+                frames[frame_num].reuse_list.push_back(access_num);
+            }
+            access_num++;
+        }
+        cout << "Page fault: " << page_fault << "/" << access_num << " Ratio: " << 1.0 * page_fault / access_num << endl;
+        return 0;
+    }
+
     infile.open(filename);
     fstream log;
     log.open("log.txt", ios::out | ios::in | ios::trunc);
-
     if (!infile)
     {
         std::cout << "File open failed" << endl;
@@ -226,17 +289,18 @@ int main(int argc, char *argv[])
             r = 1;
             page_fault++;
             frame_num = func();
-            if (frames[frame_num].page == 0)
-            {
-                page_fault--;
-                r = 0;
-            }
+            // if (frames[frame_num].page == 0)
+            // {
+            //     page_fault--;
+            //     r = 0;
+            // }
             replace_frame(newpage, frame_num);
         }
         else
         {
             frames[frame_num].accessed = true;
             frames[frame_num].last_used = access_num;
+            frames[frame_num].reuse_list.push_back(access_num);
         }
         access_num++;
         log << "page " << s_newpage << ": " << newpage << " -> frame_num :" << frame_num;
