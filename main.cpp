@@ -265,14 +265,14 @@ int getopt(int argc, char *argv[])
             }
         }
     }
-    my::max_factor = log2(frame_num) + 1;
-    // my::max_factor = 3;
+    // my::max_factor = log2(frame_num) + 1;
+    my::max_factor = frame_num;
     return 0;
 }
 
 void replace_frame(int page, int frame_num)
 {
-    frames[frame_num] = {false, false, access_num, access_num, page, my::max_factor - 2};
+    frames[frame_num] = {false, false, access_num, access_num, page, my::max_factor-2};
     frames[frame_num].reuse_list.clear();
     frames[frame_num].reuse_list.push_back(access_num);
 }
