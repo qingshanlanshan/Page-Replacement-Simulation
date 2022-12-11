@@ -41,9 +41,11 @@ namespace optimal
 namespace my
 {
     int max_factor;
+    int pointer = 0;
 }
-namespace lfu{
-    int interval=2;
+namespace lfu
+{
+    int interval = 2;
 }
 
 int get_frame(int page)
@@ -117,17 +119,20 @@ int LFU()
 {
     int frame_num = 0;
     int freq = INT32_MAX;
-    for(int i=0;i<frames.size();++i){
-        int count=0;
-        for(auto iter=frames[i].reuse_list.begin();iter!=frames[i].reuse_list.end();++iter)
+    for (int i = 0; i < frames.size(); ++i)
+    {
+        int count = 0;
+        for (auto iter = frames[i].reuse_list.begin(); iter != frames[i].reuse_list.end(); ++iter)
         {
-            if(*iter>access_num-lfu::interval*frames.size()){
+            if (*iter > access_num - lfu::interval * frames.size())
+            {
                 count++;
-            }    
+            }
         }
-        if(count<freq){
-            freq=count;
-            frame_num=i;
+        if (count < freq)
+        {
+            freq = count;
+            frame_num = i;
         }
     }
     return frame_num;
@@ -169,6 +174,23 @@ int aging()
     }
 
     return -1;
+}
+
+int aging2()
+{
+    while (1)
+    {
+        if (frames[my::pointer].factor == my::max_factor)
+        {
+            return my::pointer;
+        }
+        else
+        {
+            frames[my::pointer].factor++;
+            my::pointer++;
+            my::pointer%=frames.size();
+        }
+    }
 }
 
 int getopt(int argc, char *argv[])
@@ -226,6 +248,10 @@ int getopt(int argc, char *argv[])
                 else if (str == "aging")
                 {
                     func = &aging;
+                }
+                else if (str == "aging2")
+                {
+                    func = &aging2;
                 }
                 else
                 {
