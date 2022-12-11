@@ -121,14 +121,17 @@ int LFU()
     int freq = INT32_MAX;
     for (int i = 0; i < frames.size(); ++i)
     {
+        if(frames[i].reuse_list.size()==0)return i;
         int count = 0;
         for (auto iter = frames[i].reuse_list.begin(); iter != frames[i].reuse_list.end(); ++iter)
         {
+            // std::cout<<*iter;
             if (*iter > access_num - lfu::interval * frames.size())
             {
                 count++;
             }
         }
+        
         if (count < freq)
         {
             freq = count;
