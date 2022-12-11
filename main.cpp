@@ -42,6 +42,9 @@ namespace my
 {
     int max_factor;
 }
+namespace lfu{
+    int interval=2;
+}
 
 int get_frame(int page)
 {
@@ -118,7 +121,7 @@ int LFU()
         int count=0;
         for(auto iter=frames[i].reuse_list.begin();iter!=frames[i].reuse_list.end();++iter)
         {
-            if(*iter>access_num-2*frames.size()){
+            if(*iter>access_num-lfu::interval*frames.size()){
                 count++;
             }    
         }
