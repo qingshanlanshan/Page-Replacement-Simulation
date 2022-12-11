@@ -115,10 +115,16 @@ int LFU()
     int frame_num = 0;
     int freq = INT32_MAX;
     for(int i=0;i<frames.size();++i){
-        if(frames[i].reuse_list.size()<freq)
+        int count=0;
+        for(auto iter=frames[i].reuse_list.begin();iter!=frames[i].reuse_list.end();++iter)
         {
+            if(*iter>access_num-2*frames.size()){
+                count++;
+            }    
+        }
+        if(count<freq){
+            freq=count;
             frame_num=i;
-            freq=frames[i].reuse_list.size();
         }
     }
     return frame_num;
