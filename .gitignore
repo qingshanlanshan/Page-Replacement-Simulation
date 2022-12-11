@@ -2,3 +2,5 @@ dat
 main
 trace_*
 log.*
+*.json
+.*

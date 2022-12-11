@@ -110,7 +110,19 @@ int OPT()
     }
     return frame_num;
 }
-int LFU() { return 0; }
+int LFU()
+{
+    int frame_num = 0;
+    int freq = INT32_MAX;
+    for(int i=0;i<frames.size();++i){
+        if(frames[i].reuse_list.size()<freq)
+        {
+            frame_num=i;
+            freq=frames[i].reuse_list.size();
+        }
+    }
+    return frame_num;
+}
 int Random()
 {
     return rand() % frames.size();
@@ -218,7 +230,7 @@ int getopt(int argc, char *argv[])
             }
         }
     }
-    my::max_factor = log2(frame_num)+1;
+    my::max_factor = log2(frame_num) + 1;
     // my::max_factor = 3;
     return 0;
 }
@@ -227,6 +239,7 @@ void replace_frame(int page, int frame_num)
 {
     frames[frame_num] = {false, false, access_num, access_num, page, my::max_factor - 2};
     frames[frame_num].reuse_list.clear();
+    frames[frame_num].reuse_list.push_back(access_num);
 }
 
 int main(int argc, char *argv[])
